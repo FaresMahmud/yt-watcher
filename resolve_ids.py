@@ -11,34 +11,40 @@ HEADERS = {
     )
 }
 
+
 def fetch_channel_id(handle: str) -> str | None:
-    """Busca a página do canal e extrai o channel_id."""
+    """Busca a página do canal e extrai o channel_id. Tenta handle (@...) e formato legado (/c/...)."""
     clean_handle = handle.strip()
-    if not clean_handle.startswith("@"):
-        clean_handle = f"@{clean_handle}"
-    
-    url = f"https://www.youtube.com/{clean_handle}"
-    req = urllib.request.Request(url, headers=HEADERS)
-    
-    try:
-        with urllib.request.urlopen(req, timeout=15) as response:
-            html = response.read().decode("utf-8", errors="ignore")
-            
-            patterns = [
-                r'itemprop="identifier" content="([A-Za-z0-9_-]+)"',
-                r'channel_id=([A-Za-z0-9_-]+)',
-                r'"channelId":"([A-Za-z0-9_-]+)"',
-                r'href="https://www.youtube.com/channel/([A-Za-z0-9_-]+)"',
-            ]
-            
-            for pat in patterns:
-                match = re.search(pat, html)
-                if match:
-                    return match.group(1)
-    except Exception as e:
-        print(f"[resolve_ids] Erro ao buscar canal {clean_handle}: {e}")
-    
+
+    urls = []
+    if clean_handle.startswith("http"):
+        urls.append(clean_handle)
+    else:
+        h = clean_handle.lstrip("@")
+        urls.append(f"https://www.youtube.com/@{h}")
+        urls.append(f"https://www.youtube.com/c/{h}")
+
+    patterns = [
+        r'itemprop="identifier" content="([A-Za-z0-9_-]+)"',
+        r'channel_id=([A-Za-z0-9_-]+)',
+        r'"channelId":"([A-Za-z0-9_-]+)"',
+        r'href="https://www.youtube.com/channel/([A-Za-z0-9_-]+)"',
+    ]
+
+    for url in urls:
+        req = urllib.request.Request(url, headers=HEADERS)
+        try:
+            with urllib.request.urlopen(req, timeout=15) as response:
+                html = response.read().decode("utf-8", errors="ignore")
+                for pat in patterns:
+                    match = re.search(pat, html)
+                    if match:
+                        return match.group(1)
+        except Exception as e:
+            print(f"[resolve_ids] Aviso ao buscar {url}: {e}")
+
     return None
+
 
 def resolve_channel_ids(filepath: str = "canais.json") -> None:
     """Carrega canais.json, resolve IDs faltantes e salva o arquivo de volta."""
@@ -68,6 +74,7 @@ def resolve_channel_ids(filepath: str = "canais.json") -> None:
         print(f"[resolve_ids] {filepath} atualizado.")
     else:
         print(f"[resolve_ids] Todos os canais já possuem channel_id.")
+
 
 if __name__ == "__main__":
     resolve_channel_ids()
