@@ -32,8 +32,8 @@ def formatar_data_cabecalho(dt_iso: str) -> tuple[str, str]:
     return chave_data, titulo_dia
 
 
-def carregar_status() -> tuple[str, str, list]:
-    """Carrega data/status.json e retorna (ultima_verificacao_fmt, banner_html, canais_com_falha)."""
+def carregar_status() -> tuple[str, str]:
+    """Carrega data/status.json e retorna (ultima_verificacao_fmt, banner_html)."""
     status_data = {}
     if os.path.exists(STATUS_FILE):
         try:
@@ -162,7 +162,10 @@ def gerar_html(videos: list) -> str:
                     <label class="select-all-label">
                         <input type="checkbox" class="select-all-day" data-day="{dia_key}"> Marcar dia todo
                     </label>
-                    <button class="btn-copy-day" data-day="{dia_key}">Copiar pendentes e marcar como pegos</button>
+                    <div class="day-action-buttons">
+                        <button class="btn-copy-day" data-day="{dia_key}">Copiar pendentes e marcar como pegos</button>
+                        <button class="btn-uncheck-day" data-day="{dia_key}">Desmarcar dia</button>
+                    </div>
                     <span class="copy-feedback" id="feedback-{dia_key}"></span>
                 </div>
                 <ul class="video-list">
@@ -190,6 +193,8 @@ def gerar_html(videos: list) -> str:
             --border-color: #dee2e6;
             --primary-color: #0d6efd;
             --primary-hover: #0b5ed7;
+            --secondary-color: #6c757d;
+            --secondary-hover: #5c636a;
             --success-color: #198754;
             --badge-bg: #e9ecef;
             --badge-text: #495057;
@@ -207,6 +212,8 @@ def gerar_html(videos: list) -> str:
                 --border-color: #2e2e32;
                 --primary-color: #3b82f6;
                 --primary-hover: #2563eb;
+                --secondary-color: #71717a;
+                --secondary-hover: #52525b;
                 --success-color: #22c55e;
                 --badge-bg: #27272a;
                 --badge-text: #d4d4d8;
@@ -389,6 +396,13 @@ def gerar_html(videos: list) -> str:
             border-bottom: 1px solid var(--border-color);
         }}
 
+        .day-action-buttons {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }}
+
         .select-all-label {{
             display: flex;
             align-items: center;
@@ -420,10 +434,99 @@ def gerar_html(videos: list) -> str:
             background-color: var(--primary-hover);
         }}
 
+        .btn-uncheck-day {{
+            background-color: var(--secondary-color);
+            color: #ffffff;
+            border: none;
+            padding: 0.4rem 0.85rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }}
+
+        .btn-uncheck-day:hover {{
+            background-color: var(--secondary-hover);
+        }}
+
         .copy-feedback {{
             font-size: 0.85rem;
             font-weight: 600;
             color: var(--success-color);
+        }}
+
+        /* Toast Container e Estilos */
+        .toast-container {{
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 90vw;
+        }}
+
+        .toast {{
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            animation: toast-slide-in 0.25s ease-out;
+        }}
+
+        @keyframes toast-slide-in {{
+            from {{ transform: translateY(20px); opacity: 0; }}
+            to {{ transform: translateY(0); opacity: 1; }}
+        }}
+
+        .btn-toast-undo {{
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }}
+
+        .btn-toast-undo:hover {{
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }}
+
+        /* Rodapé */
+        footer {{
+            margin-top: 2.5rem;
+            padding: 1.5rem 0;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+        }}
+
+        .btn-clear-all {{
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: underline;
+            opacity: 0.7;
+            transition: opacity 0.2s ease, color 0.2s ease;
+        }}
+
+        .btn-clear-all:hover {{
+            opacity: 1;
+            color: #dc3545;
         }}
 
         /* Lista de Vídeos */
@@ -541,11 +644,37 @@ def gerar_html(videos: list) -> str:
         {conteudo_dias}
     </main>
 
+    <footer>
+        <button id="btn-clear-all-ytw" class="btn-clear-all">Limpar todas as marcações</button>
+    </footer>
+
+    <div id="toast-container" class="toast-container"></div>
+
     <script>
         document.addEventListener("DOMContentLoaded", () => {{
+            // 1. Migração de chaves do localStorage para o novo formato 'ytw:'
+            const keysToMigrate = [];
+            for (let i = 0; i < localStorage.length; i++) {{
+                const key = localStorage.key(i);
+                if (key) keysToMigrate.push(key);
+            }}
+
+            keysToMigrate.forEach(key => {{
+                if (key.startsWith("ytw_checked_")) {{
+                    const vid = key.replace("ytw_checked_", "");
+                    const val = localStorage.getItem(key);
+                    localStorage.setItem("ytw:done:" + vid, val);
+                    localStorage.removeItem(key);
+                }} else if (key === "ytw_hide_completed") {{
+                    const val = localStorage.getItem(key);
+                    localStorage.setItem("ytw:hide_completed", val);
+                    localStorage.removeItem(key);
+                }}
+            }});
+
             const toggleOcultar = document.getElementById("toggle-ocultar-concluidos");
 
-            const savedHideCompleted = localStorage.getItem("ytw_hide_completed") === "1";
+            const savedHideCompleted = localStorage.getItem("ytw:hide_completed") === "1";
             toggleOcultar.checked = savedHideCompleted;
             if (savedHideCompleted) {{
                 document.body.classList.add("hide-completed");
@@ -553,7 +682,7 @@ def gerar_html(videos: list) -> str:
 
             toggleOcultar.addEventListener("change", (e) => {{
                 const isChecked = e.target.checked;
-                localStorage.setItem("ytw_hide_completed", isChecked ? "1" : "0");
+                localStorage.setItem("ytw:hide_completed", isChecked ? "1" : "0");
                 if (isChecked) {{
                     document.body.classList.add("hide-completed");
                 }} else {{
@@ -564,16 +693,17 @@ def gerar_html(videos: list) -> str:
             const videoCheckboxes = document.querySelectorAll(".video-checkbox");
             videoCheckboxes.forEach(cb => {{
                 const id = cb.getAttribute("data-id");
-                const state = localStorage.getItem("ytw_checked_" + id);
+                const state = localStorage.getItem("ytw:done:" + id);
                 if (state === "1") {{
                     cb.checked = true;
                 }}
                 cb.addEventListener("change", () => {{
-                    localStorage.setItem("ytw_checked_" + id, cb.checked ? "1" : "0");
+                    localStorage.setItem("ytw:done:" + id, cb.checked ? "1" : "0");
                     updateUI();
                 }});
             }});
 
+            // Event Listeners para 'Marcar dia todo'
             const selectAllCheckboxes = document.querySelectorAll(".select-all-day");
             selectAllCheckboxes.forEach(saCb => {{
                 saCb.addEventListener("change", (e) => {{
@@ -585,12 +715,45 @@ def gerar_html(videos: list) -> str:
                     dayCbs.forEach(cb => {{
                         cb.checked = e.target.checked;
                         const id = cb.getAttribute("data-id");
-                        localStorage.setItem("ytw_checked_" + id, cb.checked ? "1" : "0");
+                        localStorage.setItem("ytw:done:" + id, cb.checked ? "1" : "0");
                     }});
                     updateUI();
                 }});
             }});
 
+            // Toast de Desfazer
+            let toastTimer = null;
+            function showUndoToast(message, onUndo) {{
+                const container = document.getElementById("toast-container");
+                container.innerHTML = ""; // Limpa toasts anteriores
+
+                const toast = document.createElement("div");
+                toast.className = "toast";
+
+                const textSpan = document.createElement("span");
+                textSpan.textContent = message;
+
+                const undoBtn = document.createElement("button");
+                undoBtn.className = "btn-toast-undo";
+                undoBtn.textContent = "Desfazer";
+
+                undoBtn.addEventListener("click", () => {{
+                    if (toastTimer) clearTimeout(toastTimer);
+                    onUndo();
+                    toast.remove();
+                }});
+
+                toast.appendChild(textSpan);
+                toast.appendChild(undoBtn);
+                container.appendChild(toast);
+
+                if (toastTimer) clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {{
+                    toast.remove();
+                }}, 8000);
+            }}
+
+            // Event Listeners para 'Copiar pendentes e marcar como pegos'
             const copyButtons = document.querySelectorAll(".btn-copy-day");
             copyButtons.forEach(btn => {{
                 btn.addEventListener("click", () => {{
@@ -599,7 +762,9 @@ def gerar_html(videos: list) -> str:
                     const feedbackEl = document.getElementById(`feedback-${{dayKey}}`);
                     if (!dayGroup) return;
 
-                    const uncheckedCbs = Array.from(dayGroup.querySelectorAll(".video-checkbox:not(:checked)"));
+                    const dayCbs = Array.from(dayGroup.querySelectorAll(".video-checkbox"));
+                    const uncheckedCbs = dayCbs.filter(cb => !cb.checked);
+
                     if (uncheckedCbs.length === 0) {{
                         if (feedbackEl) {{
                             feedbackEl.textContent = "Nenhum link pendente!";
@@ -608,6 +773,13 @@ def gerar_html(videos: list) -> str:
                         return;
                     }}
 
+                    // Salva estado anterior dos checkboxes do dia para o desfazer
+                    const previousStates = dayCbs.map(cb => ({{
+                        cb: cb,
+                        id: cb.getAttribute("data-id"),
+                        wasChecked: cb.checked
+                    }}));
+
                     const urlsToCopy = uncheckedCbs.map(cb => cb.getAttribute("data-url")).filter(Boolean);
                     const urlsText = urlsToCopy.join("\\n");
 
@@ -615,15 +787,19 @@ def gerar_html(videos: list) -> str:
                         uncheckedCbs.forEach(cb => {{
                             cb.checked = true;
                             const id = cb.getAttribute("data-id");
-                            localStorage.setItem("ytw_checked_" + id, "1");
+                            localStorage.setItem("ytw:done:" + id, "1");
                         }});
 
                         updateUI();
 
-                        if (feedbackEl) {{
-                            feedbackEl.textContent = `${{urlsToCopy.length}} link(s) copiado(s)!`;
-                            setTimeout(() => {{ feedbackEl.textContent = ""; }}, 3000);
-                        }}
+                        showUndoToast(`${{urlsToCopy.length}} link(s) copiado(s) — `, () => {{
+                            previousStates.forEach(item => {{
+                                item.cb.checked = item.wasChecked;
+                                localStorage.setItem("ytw:done:" + item.id, item.wasChecked ? "1" : "0");
+                            }});
+                            updateUI();
+                        }});
+
                     }}).catch(err => {{
                         console.error("Erro ao copiar para clipboard:", err);
                         if (feedbackEl) {{
@@ -632,6 +808,46 @@ def gerar_html(videos: list) -> str:
                     }});
                 }});
             }});
+
+            // Event Listeners para 'Desmarcar dia'
+            const uncheckButtons = document.querySelectorAll(".btn-uncheck-day");
+            uncheckButtons.forEach(btn => {{
+                btn.addEventListener("click", () => {{
+                    const dayKey = btn.getAttribute("data-day");
+                    const dayGroup = document.querySelector(`.day-group[data-day="${{dayKey}}"]`);
+                    if (!dayGroup) return;
+
+                    const dayCbs = dayGroup.querySelectorAll(".video-checkbox");
+                    dayCbs.forEach(cb => {{
+                        cb.checked = false;
+                        const id = cb.getAttribute("data-id");
+                        localStorage.setItem("ytw:done:" + id, "0");
+                    }});
+                    updateUI();
+                }});
+            }});
+
+            // Limpar todas as marcações salvas (apenas chaves com prefixo ytw:)
+            const btnClearAll = document.getElementById("btn-clear-all-ytw");
+            if (btnClearAll) {{
+                btnClearAll.addEventListener("click", () => {{
+                    if (confirm("Tem certeza que deseja limpar todas as marcações salvas?")) {{
+                        const keysToRemove = [];
+                        for (let i = 0; i < localStorage.length; i++) {{
+                            const key = localStorage.key(i);
+                            if (key && key.startsWith("ytw:")) {{
+                                keysToRemove.push(key);
+                            }}
+                        }}
+                        keysToRemove.forEach(k => localStorage.removeItem(k));
+
+                        document.querySelectorAll(".video-checkbox").forEach(cb => {{
+                            cb.checked = false;
+                        }});
+                        updateUI();
+                    }}
+                }});
+            }}
 
             function updateUI() {{
                 const dayGroups = document.querySelectorAll(".day-group");
