@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT-Watcher — Monitor de Vídeos</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --primary-color: #0d6efd;
+            --primary-hover: #0b5ed7;
+            --success-color: #198754;
+            --badge-bg: #e9ecef;
+            --badge-text: #495057;
+            --accent-bg: #f1f3f5;
+            --completed-opacity: 0.55;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121214;
+                --card-bg: #1c1c1f;
+                --text-color: #e1e1e6;
+                --text-muted: #a1a1aa;
+                --border-color: #2e2e32;
+                --primary-color: #3b82f6;
+                --primary-hover: #2563eb;
+                --success-color: #22c55e;
+                --badge-bg: #27272a;
+                --badge-text: #d4d4d8;
+                --accent-bg: #27272a;
+                --completed-opacity: 0.5;
+                --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            padding: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .total-badge {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            background: var(--badge-bg);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+        }
+
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .controls-bar input {
+            width: 1.1rem;
+            height: 1.1rem;
+            cursor: pointer;
+        }
+
+        /* Container de Dias */
+        .day-group {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .day-group.completed {
+            opacity: var(--completed-opacity);
+        }
+
+        body.hide-completed .day-group.completed {
+            display: none !important;
+        }
+
+        .day-summary {
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--accent-bg);
+            user-select: none;
+        }
+
+        .day-summary:hover {
+            opacity: 0.95;
+        }
+
+        .day-counter {
+            font-size: 0.9rem;
+            font-weight: normal;
+            color: var(--text-muted);
+        }
+
+        .day-content {
+            padding: 1rem;
+        }
+
+        .day-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .select-all-label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .select-all-label input {
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+        }
+
+        .btn-copy-day {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            padding: 0.4rem 0.85rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .btn-copy-day:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .copy-feedback {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--success-color);
+        }
+
+        /* Lista de Vídeos */
+        .video-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .video-item {
+            padding: 0.6rem;
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            transition: background-color 0.15s ease;
+        }
+
+        .video-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .video-checkbox {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-top: 0.2rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .video-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .video-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.2rem;
+        }
+
+        .channel-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            background-color: var(--badge-bg);
+            color: var(--badge-text);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .video-title-link {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-color);
+            text-decoration: none;
+            word-break: break-word;
+        }
+
+        .video-title-link:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+
+        .video-url-container {
+            margin-top: 0.15rem;
+        }
+
+        .video-url-link {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            word-break: break-all;
+            text-decoration: none;
+            font-family: monospace;
+        }
+
+        .video-url-link:hover {
+            text-decoration: underline;
+        }
+
+        .empty-msg {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-top">
+            <h1>🎬 YT-Watcher</h1>
+            <div class="total-badge" id="total-pendentes-badge">
+                <span id="total-pendentes">0</span> links pendentes no total
+            </div>
+        </div>
+        <div class="controls-bar">
+            <label class="select-all-label">
+                <input type="checkbox" id="toggle-ocultar-concluidos">
+                Ocultar dias concluídos
+            </label>
+        </div>
+    </header>
+
+    <main id="dias-container">
+        
+        <details class="day-group" data-day="2026-09-19" open>
+            <summary class="day-summary">
+                <span class="day-title">Sábado, 19/09</span>
+                <span class="day-counter">
+                    <strong class="day-total">7</strong> vídeos 
+                    (<span class="day-pending">7</span> pendentes)
+                </span>
+            </summary>
+            <div class="day-content">
+                <div class="day-actions">
+                    <label class="select-all-label">
+                        <input type="checkbox" class="select-all-day" data-day="2026-09-19"> Marcar dia todo
+                    </label>
+                    <button class="btn-copy-day" data-day="2026-09-19">Copiar pendentes e marcar como pegos</button>
+                    <span class="copy-feedback" id="feedback-2026-09-19"></span>
+                </div>
+                <ul class="video-list">
+                    
+            <li class="video-item" data-id="KVFz5p524NE">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="KVFz5p524NE" data-day="2026-09-19" data-url="https://www.youtube.com/shorts/KVFz5p524NE">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">O Perfumo Latra</span>
+                            <a href="https://www.youtube.com/shorts/KVFz5p524NE" target="_blank" rel="noopener" class="video-title-link">O CLINE DO INGENIOUS GINGER: Ginger Soul Azza Parfums</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/KVFz5p524NE" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/KVFz5p524NE</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="JO-o45wUKmI">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="JO-o45wUKmI" data-day="2026-09-19" data-url="https://www.youtube.com/watch?v=JO-o45wUKmI">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Sate Fragrances</span>
+                            <a href="https://www.youtube.com/watch?v=JO-o45wUKmI" target="_blank" rel="noopener" class="video-title-link">Fui Enganado! Achei que era o Xerjoff Deified, mas era o NOVO THE ETERNAL IDOL da In The Box!🔥🎸</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=JO-o45wUKmI" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=JO-o45wUKmI</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="NgRT2UWuqWQ">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="NgRT2UWuqWQ" data-day="2026-09-19" data-url="https://www.youtube.com/watch?v=NgRT2UWuqWQ">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">O Perfumo Latra</span>
+                            <a href="https://www.youtube.com/watch?v=NgRT2UWuqWQ" target="_blank" rel="noopener" class="video-title-link">JÁ TESTEI O NOVO LE BEAU NARCISSE! (VALE A PENA?)</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=NgRT2UWuqWQ" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=NgRT2UWuqWQ</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="BvSljsJhM2A">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="BvSljsJhM2A" data-day="2026-09-19" data-url="https://www.youtube.com/watch?v=BvSljsJhM2A">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Renato P</span>
+                            <a href="https://www.youtube.com/watch?v=BvSljsJhM2A" target="_blank" rel="noopener" class="video-title-link">FOUGÈRE BRÛLÉ O MELHOR CONTRATIPO DO LE MALE ELIXIR! - ESQUEÇAM TODOS OS ÁRABES!!!</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=BvSljsJhM2A" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=BvSljsJhM2A</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="OwZQ84iiU0M">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="OwZQ84iiU0M" data-day="2026-09-19" data-url="https://www.youtube.com/watch?v=OwZQ84iiU0M">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Sate Fragrances</span>
+                            <a href="https://www.youtube.com/watch?v=OwZQ84iiU0M" target="_blank" rel="noopener" class="video-title-link">Isola Sol de ROJA DOVE: O Perfume Que Cheira a Férias em uma Ilha de Luxo!</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=OwZQ84iiU0M" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=OwZQ84iiU0M</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="7VBZPkBdfG8">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="7VBZPkBdfG8" data-day="2026-09-19" data-url="https://www.youtube.com/watch?v=7VBZPkBdfG8">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Perfumorista</span>
+                            <a href="https://www.youtube.com/watch?v=7VBZPkBdfG8" target="_blank" rel="noopener" class="video-title-link">Spice Opus - Ogliari Profumo - Perfume de Nicho Para o Dia a Dia Especiado Fresco! #perfume</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=7VBZPkBdfG8" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=7VBZPkBdfG8</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="XNuXaryhbZs">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="XNuXaryhbZs" data-day="2026-09-19" data-url="https://www.youtube.com/shorts/XNuXaryhbZs">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Sate Fragrances</span>
+                            <a href="https://www.youtube.com/shorts/XNuXaryhbZs" target="_blank" rel="noopener" class="video-title-link">Fizeram o Impossível😲 Ramad Louban  de Arabiyat é muito similar ao Reasons por uma  fração do preço🥰</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/XNuXaryhbZs" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/XNuXaryhbZs</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+                </ul>
+            </div>
+        </details>
+        
+
+        <details class="day-group" data-day="2026-09-18" open>
+            <summary class="day-summary">
+                <span class="day-title">Sexta, 18/09</span>
+                <span class="day-counter">
+                    <strong class="day-total">9</strong> vídeos 
+                    (<span class="day-pending">9</span> pendentes)
+                </span>
+            </summary>
+            <div class="day-content">
+                <div class="day-actions">
+                    <label class="select-all-label">
+                        <input type="checkbox" class="select-all-day" data-day="2026-09-18"> Marcar dia todo
+                    </label>
+                    <button class="btn-copy-day" data-day="2026-09-18">Copiar pendentes e marcar como pegos</button>
+                    <span class="copy-feedback" id="feedback-2026-09-18"></span>
+                </div>
+                <ul class="video-list">
+                    
+            <li class="video-item" data-id="J1f4mR5vz7g">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="J1f4mR5vz7g" data-day="2026-09-18" data-url="https://www.youtube.com/watch?v=J1f4mR5vz7g">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">O Perfumo Latra</span>
+                            <a href="https://www.youtube.com/watch?v=J1f4mR5vz7g" target="_blank" rel="noopener" class="video-title-link">NÃO COMPRE PERFUME CÍTRICO ANTES DE VER ISSO!</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=J1f4mR5vz7g" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=J1f4mR5vz7g</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="FNQDWAiLKNE">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="FNQDWAiLKNE" data-day="2026-09-18" data-url="https://www.youtube.com/watch?v=FNQDWAiLKNE">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Sate Fragrances</span>
+                            <a href="https://www.youtube.com/watch?v=FNQDWAiLKNE" target="_blank" rel="noopener" class="video-title-link">O CLONE PERFEITO L´EAU D´ISSEY EXISTE? Usei o CITRUS SOLARE da Nuancielo no CALOR e me ESPANTEI!🌞😱</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=FNQDWAiLKNE" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=FNQDWAiLKNE</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="CtmzzgIUAGc">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="CtmzzgIUAGc" data-day="2026-09-18" data-url="https://www.youtube.com/shorts/CtmzzgIUAGc">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">O Perfumo Latra</span>
+                            <a href="https://www.youtube.com/shorts/CtmzzgIUAGc" target="_blank" rel="noopener" class="video-title-link">LATTAFA OPULENT DUBAI LEMBRA O GOD OF FIRE?</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/CtmzzgIUAGc" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/CtmzzgIUAGc</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="cMwXsdnTazA">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="cMwXsdnTazA" data-day="2026-09-18" data-url="https://www.youtube.com/shorts/cMwXsdnTazA">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Perfumorista</span>
+                            <a href="https://www.youtube.com/shorts/cMwXsdnTazA" target="_blank" rel="noopener" class="video-title-link">OUTRO NÍVEL! OS NOVOS PERFUMES E FRASCOS DA IN THE BOX #perfume #perfumorista</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/cMwXsdnTazA" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/cMwXsdnTazA</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="1En-Wsjvhsc">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="1En-Wsjvhsc" data-day="2026-09-18" data-url="https://www.youtube.com/shorts/1En-Wsjvhsc">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Sate Fragrances</span>
+                            <a href="https://www.youtube.com/shorts/1En-Wsjvhsc" target="_blank" rel="noopener" class="video-title-link">O MELHOR PERFUME ÁRABE DE 2026? Testei Lattafa Bade'e Al Oud Black Exposed e o Resultado Surpreendeu</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/1En-Wsjvhsc" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/1En-Wsjvhsc</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="PLxUgbRo61A">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="PLxUgbRo61A" data-day="2026-09-18" data-url="https://www.youtube.com/shorts/PLxUgbRo61A">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">O Perfumo Latra</span>
+                            <a href="https://www.youtube.com/shorts/PLxUgbRo61A" target="_blank" rel="noopener" class="video-title-link">MEU TOP 1 DE PARFUMS DE MARLY</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/PLxUgbRo61A" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/PLxUgbRo61A</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="PWRLxAkyUqg">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="PWRLxAkyUqg" data-day="2026-09-18" data-url="https://www.youtube.com/watch?v=PWRLxAkyUqg">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Renato P</span>
+                            <a href="https://www.youtube.com/watch?v=PWRLxAkyUqg" target="_blank" rel="noopener" class="video-title-link">GREAT LOVE O NOVO REI DA SEDUÇÃO LANÇAMENTO MAISON VIEGAS  - INSPIRADO NO THE ONE PARFUM</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=PWRLxAkyUqg" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=PWRLxAkyUqg</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="6N-2FoysFbk">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="6N-2FoysFbk" data-day="2026-09-18" data-url="https://www.youtube.com/shorts/6N-2FoysFbk">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Sate Fragrances</span>
+                            <a href="https://www.youtube.com/shorts/6N-2FoysFbk" target="_blank" rel="noopener" class="video-title-link">Adeus, Xerjoff Naxos? Testei o ELITE de Aurora Scents e o resultado foi CHOCANTE! 🤯</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/6N-2FoysFbk" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/6N-2FoysFbk</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="wsqMsL4zthc">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="wsqMsL4zthc" data-day="2026-09-18" data-url="https://www.youtube.com/watch?v=wsqMsL4zthc">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Perfumorista</span>
+                            <a href="https://www.youtube.com/watch?v=wsqMsL4zthc" target="_blank" rel="noopener" class="video-title-link">A In The Box Está Num Outro Patamar - Unboxing dos Lançamentos e Novos Frascos #perfume #perfumes</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=wsqMsL4zthc" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=wsqMsL4zthc</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+                </ul>
+            </div>
+        </details>
+        
+
+        <details class="day-group" data-day="2026-09-17" open>
+            <summary class="day-summary">
+                <span class="day-title">Quinta, 17/09</span>
+                <span class="day-counter">
+                    <strong class="day-total">9</strong> vídeos 
+                    (<span class="day-pending">9</span> pendentes)
+                </span>
+            </summary>
+            <div class="day-content">
+                <div class="day-actions">
+                    <label class="select-all-label">
+                        <input type="checkbox" class="select-all-day" data-day="2026-09-17"> Marcar dia todo
+                    </label>
+                    <button class="btn-copy-day" data-day="2026-09-17">Copiar pendentes e marcar como pegos</button>
+                    <span class="copy-feedback" id="feedback-2026-09-17"></span>
+                </div>
+                <ul class="video-list">
+                    
+            <li class="video-item" data-id="6FvgTr62YMw">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="6FvgTr62YMw" data-day="2026-09-17" data-url="https://www.youtube.com/shorts/6FvgTr62YMw">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">O Perfumo Latra</span>
+                            <a href="https://www.youtube.com/shorts/6FvgTr62YMw" target="_blank" rel="noopener" class="video-title-link">Capítulo 6: Granado Boemia</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/6FvgTr62YMw" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/6FvgTr62YMw</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="uEOFfXbdG7I">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="uEOFfXbdG7I" data-day="2026-09-17" data-url="https://www.youtube.com/watch?v=uEOFfXbdG7I">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">O Perfumo Latra</span>
+                            <a href="https://www.youtube.com/watch?v=uEOFfXbdG7I" target="_blank" rel="noopener" class="video-title-link">O MELHOR PERFUME NACIONAL DE CADA MARCA</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=uEOFfXbdG7I" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=uEOFfXbdG7I</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="lC0C_DE5DNI">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="lC0C_DE5DNI" data-day="2026-09-17" data-url="https://www.youtube.com/watch?v=lC0C_DE5DNI">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Sate Fragrances</span>
+                            <a href="https://www.youtube.com/watch?v=lC0C_DE5DNI" target="_blank" rel="noopener" class="video-title-link">O CLONE PERFEITO do CACTUS GARDEN de LV? Conheci o TRICK de JO MILANO e QUASE CHOREI!</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=lC0C_DE5DNI" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=lC0C_DE5DNI</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="Eatr59k0azs">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="Eatr59k0azs" data-day="2026-09-17" data-url="https://www.youtube.com/shorts/Eatr59k0azs">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Sate Fragrances</span>
+                            <a href="https://www.youtube.com/shorts/Eatr59k0azs" target="_blank" rel="noopener" class="video-title-link">UM PERFUME ÁRABE 🔥 X UMA OCASIÃO 👫🏋‍♀️👷‍♂️👨‍⚖️ hoje com os perfumes da SURRATI #perfume #perfumaria</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/Eatr59k0azs" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/Eatr59k0azs</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="Q4oCGJef5uM">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="Q4oCGJef5uM" data-day="2026-09-17" data-url="https://www.youtube.com/shorts/Q4oCGJef5uM">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">O Perfumo Latra</span>
+                            <a href="https://www.youtube.com/shorts/Q4oCGJef5uM" target="_blank" rel="noopener" class="video-title-link">PERFUME DE NICHO NACIONAL FELISA SANDAL AFFAIR</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/Q4oCGJef5uM" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/Q4oCGJef5uM</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="JlHHNXUQOvc">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="JlHHNXUQOvc" data-day="2026-09-17" data-url="https://www.youtube.com/watch?v=JlHHNXUQOvc">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Renato P</span>
+                            <a href="https://www.youtube.com/watch?v=JlHHNXUQOvc" target="_blank" rel="noopener" class="video-title-link">THE ETERNAL IDOL IN THE BOX: O CLONE PERFEITO DO DEIFIED TONY IOMMI MONKEY SPECIAL XERJOFF!</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=JlHHNXUQOvc" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=JlHHNXUQOvc</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="07hcBU1q-U0">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="07hcBU1q-U0" data-day="2026-09-17" data-url="https://www.youtube.com/watch?v=07hcBU1q-U0">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Sate Fragrances</span>
+                            <a href="https://www.youtube.com/watch?v=07hcBU1q-U0" target="_blank" rel="noopener" class="video-title-link">Conheci 4 Perfumes de NICHO tão exclusivos que quase NINGUÉM conhece no Brasil!🔥</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=07hcBU1q-U0" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=07hcBU1q-U0</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="djVRMzNF-pE">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="djVRMzNF-pE" data-day="2026-09-17" data-url="https://www.youtube.com/shorts/djVRMzNF-pE">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Sate Fragrances</span>
+                            <a href="https://www.youtube.com/shorts/djVRMzNF-pE" target="_blank" rel="noopener" class="video-title-link">OS 3 MELHORES PERFUMES de Cada Marca Árabe🇦🇪👳‍♂️ PT3 #perfume #perfumaria #perfumeárabe</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/shorts/djVRMzNF-pE" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/shorts/djVRMzNF-pE</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+
+            <li class="video-item" data-id="acjxtMCqelM">
+                <div class="video-row">
+                    <input type="checkbox" class="video-checkbox" data-id="acjxtMCqelM" data-day="2026-09-17" data-url="https://www.youtube.com/watch?v=acjxtMCqelM">
+                    <div class="video-content">
+                        <div class="video-header">
+                            <span class="channel-badge">Perfumorista</span>
+                            <a href="https://www.youtube.com/watch?v=acjxtMCqelM" target="_blank" rel="noopener" class="video-title-link">Unboxing - Lançamentos Árabes - Rayhaan Amazonico, Cedrus Blanc, Nava Sol e Mais! #perfume #perfumes</a>
+                        </div>
+                        <div class="video-url-container">
+                            <a href="https://www.youtube.com/watch?v=acjxtMCqelM" target="_blank" rel="noopener" class="video-url-link">https://www.youtube.com/watch?v=acjxtMCqelM</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+                </ul>
+            </div>
+        </details>
+        
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const toggleOcultar = document.getElementById("toggle-ocultar-concluidos");
+
+            // Carrega preferência do toggle de ocultar concluídos
+            const savedHideCompleted = localStorage.getItem("ytw_hide_completed") === "1";
+            toggleOcultar.checked = savedHideCompleted;
+            if (savedHideCompleted) {
+                document.body.classList.add("hide-completed");
+            }
+
+            toggleOcultar.addEventListener("change", (e) => {
+                const isChecked = e.target.checked;
+                localStorage.setItem("ytw_hide_completed", isChecked ? "1" : "0");
+                if (isChecked) {
+                    document.body.classList.add("hide-completed");
+                } else {
+                    document.body.classList.remove("hide-completed");
+                }
+            });
+
+            // Carrega estado de todos os checkboxes de vídeos por ID
+            const videoCheckboxes = document.querySelectorAll(".video-checkbox");
+            videoCheckboxes.forEach(cb => {
+                const id = cb.getAttribute("data-id");
+                const state = localStorage.getItem("ytw_checked_" + id);
+                if (state === "1") {
+                    cb.checked = true;
+                }
+                cb.addEventListener("change", () => {
+                    localStorage.setItem("ytw_checked_" + id, cb.checked ? "1" : "0");
+                    updateUI();
+                });
+            });
+
+            // Event Listeners para 'Marcar dia todo'
+            const selectAllCheckboxes = document.querySelectorAll(".select-all-day");
+            selectAllCheckboxes.forEach(saCb => {
+                saCb.addEventListener("change", (e) => {
+                    const dayKey = saCb.getAttribute("data-day");
+                    const dayGroup = document.querySelector(`.day-group[data-day="${dayKey}"]`);
+                    if (!dayGroup) return;
+
+                    const dayCbs = dayGroup.querySelectorAll(".video-checkbox");
+                    dayCbs.forEach(cb => {
+                        cb.checked = e.target.checked;
+                        const id = cb.getAttribute("data-id");
+                        localStorage.setItem("ytw_checked_" + id, cb.checked ? "1" : "0");
+                    });
+                    updateUI();
+                });
+            });
+
+            // Event Listeners para 'Copiar pendentes e marcar como pegos'
+            const copyButtons = document.querySelectorAll(".btn-copy-day");
+            copyButtons.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const dayKey = btn.getAttribute("data-day");
+                    const dayGroup = document.querySelector(`.day-group[data-day="${dayKey}"]`);
+                    const feedbackEl = document.getElementById(`feedback-${dayKey}`);
+                    if (!dayGroup) return;
+
+                    const uncheckedCbs = Array.from(dayGroup.querySelectorAll(".video-checkbox:not(:checked)"));
+                    if (uncheckedCbs.length === 0) {
+                        if (feedbackEl) {
+                            feedbackEl.textContent = "Nenhum link pendente!";
+                            setTimeout(() => { feedbackEl.textContent = ""; }, 2500);
+                        }
+                        return;
+                    }
+
+                    const urlsToCopy = uncheckedCbs.map(cb => cb.getAttribute("data-url")).filter(Boolean);
+                    const urlsText = urlsToCopy.join("\n");
+
+                    navigator.clipboard.writeText(urlsText).then(() => {
+                        uncheckedCbs.forEach(cb => {
+                            cb.checked = true;
+                            const id = cb.getAttribute("data-id");
+                            localStorage.setItem("ytw_checked_" + id, "1");
+                        });
+
+                        updateUI();
+
+                        if (feedbackEl) {
+                            feedbackEl.textContent = `${urlsToCopy.length} link(s) copiado(s)!`;
+                            setTimeout(() => { feedbackEl.textContent = ""; }, 3000);
+                        }
+                    }).catch(err => {
+                        console.error("Erro ao copiar para clipboard:", err);
+                        if (feedbackEl) {
+                            feedbackEl.textContent = "Erro ao copiar!";
+                        }
+                    });
+                });
+            });
+
+            function updateUI() {
+                const dayGroups = document.querySelectorAll(".day-group");
+                let totalPendentesGeral = 0;
+
+                dayGroups.forEach(group => {
+                    const dayCbs = Array.from(group.querySelectorAll(".video-checkbox"));
+                    const totalNoDia = dayCbs.length;
+                    const pendentesNoDia = dayCbs.filter(cb => !cb.checked).length;
+                    totalPendentesGeral += pendentesNoDia;
+
+                    // Atualiza contador no cabeçalho do dia
+                    const pendingEl = group.querySelector(".day-pending");
+                    if (pendingEl) {
+                        pendingEl.textContent = pendentesNoDia;
+                    }
+
+                    // Atualiza checkbox 'Marcar dia todo'
+                    const saCb = group.querySelector(".select-all-day");
+                    if (saCb) {
+                        saCb.checked = (pendentesNoDia === 0 && totalNoDia > 0);
+                    }
+
+                    // Se o dia estiver 100% marcado
+                    if (pendentesNoDia === 0 && totalNoDia > 0) {
+                        group.classList.add("completed");
+                        // Recolhe o details apenas se ele não foi fechado manualmente pelo usuário antes
+                        if (!group.hasAttribute("data-user-toggled")) {
+                            group.removeAttribute("open");
+                        }
+                    } else {
+                        group.classList.remove("completed");
+                        if (!group.hasAttribute("data-user-toggled")) {
+                            group.setAttribute("open", "");
+                        }
+                    }
+                });
+
+                // Marca data-user-toggled quando o usuário abre/fecha manualmente
+                dayGroups.forEach(group => {
+                    if (!group.hasAttribute("data-listener-added")) {
+                        group.setAttribute("data-listener-added", "true");
+                        group.addEventListener("toggle", () => {
+                            group.setAttribute("data-user-toggled", "true");
+                        });
+                    }
+                });
+
+                // Atualiza contador geral no topo
+                const totalGeralEl = document.getElementById("total-pendentes");
+                if (totalGeralEl) {
+                    totalGeralEl.textContent = totalPendentesGeral;
+                }
+            }
+
+            // Executa updateUI inicial
+            updateUI();
+        });
+    </script>
+</body>
+</html>
