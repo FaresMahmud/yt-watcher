@@ -333,19 +333,31 @@
             border-top: 1px solid var(--border-color);
         }
 
-        .btn-clear-all {
+        .footer-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-btn {
             background: none;
             border: none;
             color: var(--text-muted);
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             cursor: pointer;
             text-decoration: underline;
-            opacity: 0.7;
+            opacity: 0.85;
             transition: opacity 0.2s ease, color 0.2s ease;
         }
 
-        .btn-clear-all:hover {
+        .footer-btn:hover {
             opacity: 1;
+            color: var(--primary-color);
+        }
+
+        .footer-btn.btn-clear-all:hover {
             color: #dc3545;
         }
 
@@ -1019,7 +1031,12 @@
     </main>
 
     <footer>
-        <button id="btn-clear-all-ytw" class="btn-clear-all">Limpar todas as marcações</button>
+        <div class="footer-actions">
+            <button id="btn-export-ytw" class="footer-btn">Exportar marcações</button>
+            <button id="btn-import-ytw" class="footer-btn">Importar marcações</button>
+            <button id="btn-clear-all-ytw" class="footer-btn btn-clear-all">Limpar todas as marcações</button>
+            <input type="file" id="file-import-ytw" accept=".json" style="display: none;">
+        </div>
     </footer>
 
     <div id="toast-container" class="toast-container"></div>
@@ -1094,6 +1111,23 @@
                     updateUI();
                 });
             });
+
+            // Toast Informativo genérico
+            function showInfoToast(message) {
+                const container = document.getElementById("toast-container");
+                const toast = document.createElement("div");
+                toast.className = "toast";
+
+                const textSpan = document.createElement("span");
+                textSpan.textContent = message;
+
+                toast.appendChild(textSpan);
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.remove();
+                }, 4000);
+            }
 
             // Toast de Desfazer
             let toastTimer = null;
@@ -1200,6 +1234,109 @@
                     updateUI();
                 });
             });
+
+            // Exportar Marcações
+            const btnExport = document.getElementById("btn-export-ytw");
+            if (btnExport) {
+                btnExport.addEventListener("click", () => {
+                    const data = {};
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith("ytw:")) {
+                            data[key] = localStorage.getItem(key);
+                        }
+                    }
+                    const jsonStr = JSON.stringify(data, null, 2);
+                    const blob = new Blob([jsonStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, "0");
+                    const day = String(now.getDate()).padStart(2, "0");
+
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `ytw-marcacoes-${year}-${month}-${day}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                    showInfoToast("Marcações exportadas com sucesso!");
+                });
+            }
+
+            // Importar Marcações
+            const btnImport = document.getElementById("btn-import-ytw");
+            const fileInput = document.getElementById("file-import-ytw");
+
+            if (btnImport && fileInput) {
+                btnImport.addEventListener("click", () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener("change", (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const importedData = JSON.parse(event.target.result);
+                            if (typeof importedData !== "object" || importedData === null) {
+                                throw new Error("Formato inválido");
+                            }
+
+                            let count = 0;
+                            for (const [key, val] of Object.entries(importedData)) {
+                                if (!key.startsWith("ytw:")) continue;
+
+                                const existingVal = localStorage.getItem(key);
+                                // MERGE: nunca substitui '1' por '0' ou ausência
+                                if (key.startsWith("ytw:done:")) {
+                                    if (existingVal === "1") {
+                                        continue;
+                                    }
+                                    if (val === "1") {
+                                        localStorage.setItem(key, "1");
+                                        count++;
+                                    }
+                                } else {
+                                    localStorage.setItem(key, String(val));
+                                    count++;
+                                }
+                            }
+
+                            // Atualiza os checkboxes em tela sem recarregar
+                            document.querySelectorAll(".video-checkbox").forEach(cb => {
+                                const id = cb.getAttribute("data-id");
+                                if (localStorage.getItem("ytw:done:" + id) === "1") {
+                                    cb.checked = true;
+                                }
+                            });
+
+                            // Atualiza preference do toggle se houver
+                            const savedHideCompleted = localStorage.getItem("ytw:hide_completed") === "1";
+                            if (toggleOcultar) {
+                                toggleOcultar.checked = savedHideCompleted;
+                                if (savedHideCompleted) {
+                                    document.body.classList.add("hide-completed");
+                                } else {
+                                    document.body.classList.remove("hide-completed");
+                                }
+                            }
+
+                            updateUI();
+                            showInfoToast(`${count} marcação(ões) importada(s) com sucesso!`);
+                        } catch (err) {
+                            console.error("Erro na importação:", err);
+                            alert("Erro ao importar o arquivo JSON. Certifique-se de que é um backup válido.");
+                        } finally {
+                            fileInput.value = "";
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+            }
 
             // Limpar todas as marcações salvas (apenas chaves com prefixo ytw:)
             const btnClearAll = document.getElementById("btn-clear-all-ytw");
