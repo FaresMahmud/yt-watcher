@@ -2,7 +2,7 @@
 
 O **yt-watcher** é um sistema em Python para monitorar canais do YouTube via feeds RSS e gerar uma página web estática responsiva (`docs/index.html`) com o histórico de vídeos novos agrupados por dia.
 
-Possui controle de estado via `localStorage` (marcar o que já foi visto/copiado, copiar links com 1 clique) e suporte a notificações no Telegram.
+Possui controle de estado via `localStorage` (marcar o que já foi visto/copiado, copiar links com 1 clique), indicadores de status/falhas e suporte a notificações no Telegram.
 
 ---
 
@@ -13,12 +13,12 @@ Edite o arquivo `canais.json` e adicione objetos com o nome e o handle do canal 
 ```json
 [
   {
-    "nome": "Fireship",
-    "handle": "@Fireship"
+    "nome": "Renato P",
+    "handle": "@renatop1986"
   },
   {
-    "nome": "Marques Brownlee",
-    "handle": "@mkbhd"
+    "nome": "Perfumorista",
+    "handle": "@Perfumorista"
   }
 ]
 ```
@@ -38,7 +38,7 @@ Edite o arquivo `canais.json` e adicione objetos com o nome e o handle do canal 
    ```bash
    python monitor.py
    ```
-   *(Na primeira execução, ele busca vídeos dos últimos 2 dias. Nas próximas, apenas adiciona os novos vídeos).*
+   *(Na primeira execução, ele busca vídeos dos últimos 2 dias. Nas próximas, adiciona novos vídeos salvando o status em `data/status.json`).*
 
 3. **Gere a página HTML:**
    ```bash
@@ -64,17 +64,17 @@ Edite o arquivo `canais.json` e adicione objetos com o nome e o handle do canal 
 Se desejar receber uma mensagem no Telegram sempre que houver novos vídeos:
 
 1. Crie um Bot no Telegram via [@BotFather](https://t.me/BotFather) e guarde o **Token**.
-2. Obtenha o seu **Chat ID** (enviando uma mensagem para o bot e consultando via `https://api.telegram.org/bot<TOKEN>/getUpdates` ou usando um bot como `@userinfobot`).
+2. Obtenha o seu **Chat ID** (enviando uma mensagem para o bot).
 3. No seu repositório no GitHub, vá em **Settings** > **Secrets and variables** > **Actions**.
-4. Adicione os seguintes Repository Secrets:
-   - `TELEGRAM_TOKEN`: Token do seu Bot.
-   - `TELEGRAM_CHAT_ID`: Seu ID numérico no Telegram.
-   - `PAGES_URL`: URL pública da sua página no GitHub Pages (ex: `https://<usuario>.github.io/yt-watcher/`).
-
-Se essas variáveis não forem cadastradas, o script continuará rodando normalmente sem enviar notificações.
+4. Adicione os seguintes Secrets/Vars:
+   - Secret `TELEGRAM_TOKEN`: Token do seu Bot.
+   - Secret `TELEGRAM_CHAT_ID`: Seu ID numérico no Telegram.
+   - Var `PAGES_URL`: URL pública da sua página no GitHub Pages (ex: `https://<usuario>.github.io/yt-watcher/`).
 
 ---
 
-## 🤖 Automação
+## 🤖 Automação e Agendamento
 
-O workflow do GitHub Actions (`.github/workflows/watch.yml`) é executado **a cada 3 horas** e também pode ser disparado manualmente na aba **Actions** (`workflow_dispatch`). Ele busca os vídeos novos, atualiza o `data/videos.json` e gera a página `docs/index.html` atualizada.
+O workflow do GitHub Actions (`.github/workflows/watch.yml`) é executado **diariamente às 20h no horário de Brasília (23:07 UTC)** e também pode ser disparado manualmente na aba **Actions** (`workflow_dispatch`).
+
+Em caso de falha completa de todos os canais em uma verificação, o script aborta com código de erro, sinalizando a execução no GitHub Actions para envio de alertas por e-mail.

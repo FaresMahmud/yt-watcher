@@ -2,7 +2,11 @@ name: Monitor YouTube Channels
 
 on:
   schedule:
-    - cron: '0 */3 * * *'
+    # O cron do GitHub Actions é em UTC.
+    # Brasília é UTC-3 (sem horário de verão).
+    # 20:00 em Brasília (UTC-3) corresponde a 23:00 em UTC.
+    # '7 23 * * *' executa diariamente às 23:07 UTC (20:07 no horário de Brasília).
+    - cron: '7 23 * * *'
   workflow_dispatch:
 
 permissions:
@@ -43,10 +47,10 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/videos.json docs/index.html canais.json
+          git add data/videos.json data/status.json docs/index.html canais.json
           if git diff --staged --quiet; then
             echo "Nenhuma alteração para salvar."
           else
-            git commit -m "chore: atualizar vídeos e página [skip ci]"
+            git commit -m "chore: atualizar vídeos, status e página [skip ci]"
             git push
           fi

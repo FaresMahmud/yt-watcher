@@ -93,9 +93,20 @@
         .controls-bar {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 0.5rem;
             font-size: 0.95rem;
             color: var(--text-muted);
+            flex-wrap: wrap;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 0.5rem;
+        }
+
+        .controls-bar label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
             cursor: pointer;
             user-select: none;
         }
@@ -104,6 +115,45 @@
             width: 1.1rem;
             height: 1.1rem;
             cursor: pointer;
+        }
+
+        .last-check-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Banner de Alerta de Status */
+        .status-alert-banner {
+            background-color: #fff3cd;
+            color: #664d03;
+            border: 1px solid #ffecb5;
+            border-left: 5px solid #ffc107;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .status-alert-banner {
+                background-color: #332701;
+                color: #ffda6a;
+                border: 1px solid #664d03;
+                border-left: 5px solid #ffc107;
+            }
+        }
+
+        .status-alert-header {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-alert-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            font-size: 0.9rem;
         }
 
         /* Container de Dias */
@@ -203,7 +253,7 @@
         .video-list {
             list-style: none;
             display: flex;
-            flex-direction: flex-column;
+            flex-direction: column;
             gap: 0.75rem;
         }
 
@@ -302,8 +352,13 @@
                 <input type="checkbox" id="toggle-ocultar-concluidos">
                 Ocultar dias concluídos
             </label>
+            <div class="last-check-info">
+                Última verificação: <strong>19/09 18:23</strong>
+            </div>
         </div>
     </header>
+
+    
 
     <main id="dias-container">
         
@@ -778,7 +833,6 @@
         document.addEventListener("DOMContentLoaded", () => {
             const toggleOcultar = document.getElementById("toggle-ocultar-concluidos");
 
-            // Carrega preferência do toggle de ocultar concluídos
             const savedHideCompleted = localStorage.getItem("ytw_hide_completed") === "1";
             toggleOcultar.checked = savedHideCompleted;
             if (savedHideCompleted) {
@@ -795,7 +849,6 @@
                 }
             });
 
-            // Carrega estado de todos os checkboxes de vídeos por ID
             const videoCheckboxes = document.querySelectorAll(".video-checkbox");
             videoCheckboxes.forEach(cb => {
                 const id = cb.getAttribute("data-id");
@@ -809,7 +862,6 @@
                 });
             });
 
-            // Event Listeners para 'Marcar dia todo'
             const selectAllCheckboxes = document.querySelectorAll(".select-all-day");
             selectAllCheckboxes.forEach(saCb => {
                 saCb.addEventListener("change", (e) => {
@@ -827,7 +879,6 @@
                 });
             });
 
-            // Event Listeners para 'Copiar pendentes e marcar como pegos'
             const copyButtons = document.querySelectorAll(".btn-copy-day");
             copyButtons.forEach(btn => {
                 btn.addEventListener("click", () => {
@@ -880,22 +931,18 @@
                     const pendentesNoDia = dayCbs.filter(cb => !cb.checked).length;
                     totalPendentesGeral += pendentesNoDia;
 
-                    // Atualiza contador no cabeçalho do dia
                     const pendingEl = group.querySelector(".day-pending");
                     if (pendingEl) {
                         pendingEl.textContent = pendentesNoDia;
                     }
 
-                    // Atualiza checkbox 'Marcar dia todo'
                     const saCb = group.querySelector(".select-all-day");
                     if (saCb) {
                         saCb.checked = (pendentesNoDia === 0 && totalNoDia > 0);
                     }
 
-                    // Se o dia estiver 100% marcado
                     if (pendentesNoDia === 0 && totalNoDia > 0) {
                         group.classList.add("completed");
-                        // Recolhe o details apenas se ele não foi fechado manualmente pelo usuário antes
                         if (!group.hasAttribute("data-user-toggled")) {
                             group.removeAttribute("open");
                         }
@@ -907,7 +954,6 @@
                     }
                 });
 
-                // Marca data-user-toggled quando o usuário abre/fecha manualmente
                 dayGroups.forEach(group => {
                     if (!group.hasAttribute("data-listener-added")) {
                         group.setAttribute("data-listener-added", "true");
@@ -917,14 +963,12 @@
                     }
                 });
 
-                // Atualiza contador geral no topo
                 const totalGeralEl = document.getElementById("total-pendentes");
                 if (totalGeralEl) {
                     totalGeralEl.textContent = totalPendentesGeral;
                 }
             }
 
-            // Executa updateUI inicial
             updateUI();
         });
     </script>

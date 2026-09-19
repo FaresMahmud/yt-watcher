@@ -8,6 +8,7 @@ SAO_PAULO_TZ = ZoneInfo("America/Sao_Paulo")
 
 DATA_DIR = "data"
 VIDEOS_FILE = os.path.join(DATA_DIR, "videos.json")
+STATUS_FILE = os.path.join(DATA_DIR, "status.json")
 DOCS_DIR = "docs"
 INDEX_HTML = os.path.join(DOCS_DIR, "index.html")
 
@@ -31,7 +32,73 @@ def formatar_data_cabecalho(dt_iso: str) -> tuple[str, str]:
     return chave_data, titulo_dia
 
 
+def carregar_status() -> tuple[str, str, list]:
+    """Carrega data/status.json e retorna (ultima_verificacao_fmt, banner_html, canais_com_falha)."""
+    status_data = {}
+    if os.path.exists(STATUS_FILE):
+        try:
+            with open(STATUS_FILE, "r", encoding="utf-8-sig") as f:
+                status_data = json.load(f)
+        except Exception as e:
+            print(f"[gerar_pagina] Erro ao ler status.json: {e}")
+
+    ultima_execucao_iso = status_data.get("ultima_execucao", "")
+    status_canais = status_data.get("canais", [])
+
+    agora_sp = datetime.now(SAO_PAULO_TZ)
+
+    ultima_verificacao_str = "Desconhecida"
+    atrasado = False
+
+    if ultima_execucao_iso:
+        try:
+            dt_exec = dateparser.parse(ultima_execucao_iso).astimezone(SAO_PAULO_TZ)
+            ultima_verificacao_str = dt_exec.strftime("%d/%m %H:%M")
+            horas_passadas = (agora_sp - dt_exec).total_seconds() / 3600.0
+            if horas_passadas > 36:
+                atrasado = True
+        except Exception:
+            pass
+
+    canais_com_falha = [c for c in status_canais if not c.get("ok")]
+
+    alertas_html = []
+
+    if atrasado:
+        alertas_html.append(f"<li>⚠️ <strong>Aviso de Atraso:</strong> A última verificação ocorreu há mais de 36 horas ({ultima_verificacao_str}).</li>")
+
+    for c in canais_com_falha:
+        nome = c.get("nome", "Canal")
+        erro = c.get("erro", "Erro desconhecido")
+        u_suc = c.get("ultimo_sucesso")
+        u_suc_str = "nunca"
+        if u_suc:
+            try:
+                u_suc_dt = dateparser.parse(u_suc).astimezone(SAO_PAULO_TZ)
+                u_suc_str = u_suc_dt.strftime("%d/%m %H:%M")
+            except Exception:
+                u_suc_str = u_suc
+
+        alertas_html.append(f"<li>🔴 <strong>Falha no canal '{nome}':</strong> {erro} (Último sucesso: {u_suc_str})</li>")
+
+    banner_html = ""
+    if alertas_html:
+        items_alertas = "\n".join(alertas_html)
+        banner_html = f"""
+        <div class="status-alert-banner">
+            <div class="status-alert-header">⚠️ Alerta de Monitoramento</div>
+            <ul class="status-alert-list">
+                {items_alertas}
+            </ul>
+        </div>
+        """
+
+    return ultima_verificacao_str, banner_html
+
+
 def gerar_html(videos: list) -> str:
+    ultima_verificacao_str, banner_html = carregar_status()
+
     # Agrupa vídeos por dia de publicação
     grupos_por_dia = {}
     
@@ -203,9 +270,20 @@ def gerar_html(videos: list) -> str:
         .controls-bar {{
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 0.5rem;
             font-size: 0.95rem;
             color: var(--text-muted);
+            flex-wrap: wrap;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 0.5rem;
+        }}
+
+        .controls-bar label {{
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
             cursor: pointer;
             user-select: none;
         }}
@@ -214,6 +292,45 @@ def gerar_html(videos: list) -> str:
             width: 1.1rem;
             height: 1.1rem;
             cursor: pointer;
+        }}
+
+        .last-check-info {{
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }}
+
+        /* Banner de Alerta de Status */
+        .status-alert-banner {{
+            background-color: #fff3cd;
+            color: #664d03;
+            border: 1px solid #ffecb5;
+            border-left: 5px solid #ffc107;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }}
+
+        @media (prefers-color-scheme: dark) {{
+            .status-alert-banner {{
+                background-color: #332701;
+                color: #ffda6a;
+                border: 1px solid #664d03;
+                border-left: 5px solid #ffc107;
+            }}
+        }}
+
+        .status-alert-header {{
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }}
+
+        .status-alert-list {{
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            font-size: 0.9rem;
         }}
 
         /* Container de Dias */
@@ -313,7 +430,7 @@ def gerar_html(videos: list) -> str:
         .video-list {{
             list-style: none;
             display: flex;
-            flex-direction: flex-column;
+            flex-direction: column;
             gap: 0.75rem;
         }}
 
@@ -412,8 +529,13 @@ def gerar_html(videos: list) -> str:
                 <input type="checkbox" id="toggle-ocultar-concluidos">
                 Ocultar dias concluídos
             </label>
+            <div class="last-check-info">
+                Última verificação: <strong>{ultima_verificacao_str}</strong>
+            </div>
         </div>
     </header>
+
+    {banner_html}
 
     <main id="dias-container">
         {conteudo_dias}
@@ -423,7 +545,6 @@ def gerar_html(videos: list) -> str:
         document.addEventListener("DOMContentLoaded", () => {{
             const toggleOcultar = document.getElementById("toggle-ocultar-concluidos");
 
-            // Carrega preferência do toggle de ocultar concluídos
             const savedHideCompleted = localStorage.getItem("ytw_hide_completed") === "1";
             toggleOcultar.checked = savedHideCompleted;
             if (savedHideCompleted) {{
@@ -440,7 +561,6 @@ def gerar_html(videos: list) -> str:
                 }}
             }});
 
-            // Carrega estado de todos os checkboxes de vídeos por ID
             const videoCheckboxes = document.querySelectorAll(".video-checkbox");
             videoCheckboxes.forEach(cb => {{
                 const id = cb.getAttribute("data-id");
@@ -454,7 +574,6 @@ def gerar_html(videos: list) -> str:
                 }});
             }});
 
-            // Event Listeners para 'Marcar dia todo'
             const selectAllCheckboxes = document.querySelectorAll(".select-all-day");
             selectAllCheckboxes.forEach(saCb => {{
                 saCb.addEventListener("change", (e) => {{
@@ -472,7 +591,6 @@ def gerar_html(videos: list) -> str:
                 }});
             }});
 
-            // Event Listeners para 'Copiar pendentes e marcar como pegos'
             const copyButtons = document.querySelectorAll(".btn-copy-day");
             copyButtons.forEach(btn => {{
                 btn.addEventListener("click", () => {{
@@ -525,22 +643,18 @@ def gerar_html(videos: list) -> str:
                     const pendentesNoDia = dayCbs.filter(cb => !cb.checked).length;
                     totalPendentesGeral += pendentesNoDia;
 
-                    // Atualiza contador no cabeçalho do dia
                     const pendingEl = group.querySelector(".day-pending");
                     if (pendingEl) {{
                         pendingEl.textContent = pendentesNoDia;
                     }}
 
-                    // Atualiza checkbox 'Marcar dia todo'
                     const saCb = group.querySelector(".select-all-day");
                     if (saCb) {{
                         saCb.checked = (pendentesNoDia === 0 && totalNoDia > 0);
                     }}
 
-                    // Se o dia estiver 100% marcado
                     if (pendentesNoDia === 0 && totalNoDia > 0) {{
                         group.classList.add("completed");
-                        // Recolhe o details apenas se ele não foi fechado manualmente pelo usuário antes
                         if (!group.hasAttribute("data-user-toggled")) {{
                             group.removeAttribute("open");
                         }}
@@ -552,7 +666,6 @@ def gerar_html(videos: list) -> str:
                     }}
                 }});
 
-                // Marca data-user-toggled quando o usuário abre/fecha manualmente
                 dayGroups.forEach(group => {{
                     if (!group.hasAttribute("data-listener-added")) {{
                         group.setAttribute("data-listener-added", "true");
@@ -562,14 +675,12 @@ def gerar_html(videos: list) -> str:
                     }}
                 }});
 
-                // Atualiza contador geral no topo
                 const totalGeralEl = document.getElementById("total-pendentes");
                 if (totalGeralEl) {{
                     totalGeralEl.textContent = totalPendentesGeral;
                 }}
             }}
 
-            // Executa updateUI inicial
             updateUI();
         }});
     </script>
