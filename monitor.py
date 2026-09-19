@@ -72,14 +72,14 @@ def executar_monitor() -> None:
         print(f"[monitor] {CANAIS_FILE} não existe.")
         return
 
-    with open(CANAIS_FILE, "r", encoding="utf-8") as f:
+    with open(CANAIS_FILE, "r", encoding="utf-8-sig") as f:
         canais = json.load(f)
 
     # 2. Carrega vídeos existentes
     os.makedirs(DATA_DIR, exist_ok=True)
     videos_existentes = []
     if os.path.exists(VIDEOS_FILE):
-        with open(VIDEOS_FILE, "r", encoding="utf-8") as f:
+        with open(VIDEOS_FILE, "r", encoding="utf-8-sig") as f:
             try:
                 videos_existentes = json.load(f)
             except json.JSONDecodeError:

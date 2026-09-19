@@ -313,7 +313,7 @@ def gerar_html(videos: list) -> str:
         .video-list {{
             list-style: none;
             display: flex;
-            flex-direction: column;
+            flex-direction: flex-column;
             gap: 0.75rem;
         }}
 
@@ -582,7 +582,7 @@ def gerar_html(videos: list) -> str:
 def gerar_pagina() -> None:
     videos = []
     if os.path.exists(VIDEOS_FILE):
-        with open(VIDEOS_FILE, "r", encoding="utf-8") as f:
+        with open(VIDEOS_FILE, "r", encoding="utf-8-sig") as f:
             try:
                 videos = json.load(f)
             except json.JSONDecodeError:

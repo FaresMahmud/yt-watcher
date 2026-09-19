@@ -24,7 +24,6 @@ def fetch_channel_id(handle: str) -> str | None:
         with urllib.request.urlopen(req, timeout=15) as response:
             html = response.read().decode("utf-8", errors="ignore")
             
-            # Padrões comuns no HTML do YouTube para extrair channelId
             patterns = [
                 r'itemprop="identifier" content="([A-Za-z0-9_-]+)"',
                 r'channel_id=([A-Za-z0-9_-]+)',
@@ -47,7 +46,7 @@ def resolve_channel_ids(filepath: str = "canais.json") -> None:
         print(f"[resolve_ids] Arquivo {filepath} não encontrado.")
         return
 
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, "r", encoding="utf-8-sig") as f:
         canais = json.load(f)
 
     alterado = False
