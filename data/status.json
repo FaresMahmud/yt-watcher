@@ -1,5 +1,6 @@
 {
-  "ultima_execucao": "2026-10-13T00:30:16.072069-03:00",
+  "ultima_execucao": "2026-10-16T03:32:58.609458-03:00",
+  "falhas_consecutivas_totais": 1,
   "canais": [
     {
       "nome": "Renato P",
@@ -33,8 +34,8 @@
     },
     {
       "nome": "Gents Scents",
-      "ok": true,
-      "erro": null,
+      "ok": false,
+      "erro": "HTTP Status 404",
       "ultimo_sucesso": "2026-10-13T00:30:16.072069-03:00"
     }
   ]
