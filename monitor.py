@@ -1,7 +1,7 @@
 import calendar
 import json
 import os
-import sys
+import time
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 import feedparser
@@ -34,8 +34,11 @@ def get_published_datetime(entry) -> datetime:
     return dt.astimezone(SAO_PAULO_TZ)
 
 
-def fetch_feed_com_retentativas(feed_url: str, tentativas: int = 2, timeout: int = 15):
-    """Busca o feed RSS com timeout e retentativas."""
+PAUSAS_ENTRE_TENTATIVAS = (2, 5, 10)
+
+
+def fetch_feed_com_retentativas(feed_url: str, tentativas: int = 3, timeout: int = 15):
+    """Busca o feed RSS com timeout e retentativas, com pausa crescente entre elas."""
     ultimo_erro = None
     for i in range(1, tentativas + 1):
         try:
@@ -49,6 +52,10 @@ def fetch_feed_com_retentativas(feed_url: str, tentativas: int = 2, timeout: int
         except Exception as e:
             ultimo_erro = e
             print(f"[monitor] Tentativa {i}/{tentativas} para {feed_url} falhou: {e}")
+            if i < tentativas:
+                pausa = PAUSAS_ENTRE_TENTATIVAS[min(i - 1, len(PAUSAS_ENTRE_TENTATIVAS) - 1)]
+                print(f"[monitor] Aguardando {pausa}s antes da próxima tentativa...")
+                time.sleep(pausa)
     raise ultimo_erro
 
 
@@ -101,10 +108,23 @@ def carregar_status_anterior() -> dict:
     return ultimos_sucessos
 
 
-def salvar_status(agora_iso: str, status_canais: list) -> None:
+def carregar_falhas_consecutivas_anteriores() -> int:
+    """Lê falhas_consecutivas_totais do status.json anterior (0 se ausente/ilegível)."""
+    if os.path.exists(STATUS_FILE):
+        try:
+            with open(STATUS_FILE, "r", encoding="utf-8-sig") as f:
+                valor = json.load(f).get("falhas_consecutivas_totais", 0)
+                return valor if isinstance(valor, int) and valor >= 0 else 0
+        except Exception as e:
+            print(f"[monitor] Erro ao ler falhas_consecutivas_totais anterior: {e}")
+    return 0
+
+
+def salvar_status(agora_iso: str, status_canais: list, falhas_consecutivas_totais: int) -> None:
     """Grava data/status.json em UTF-8 sem BOM."""
     dados_status = {
         "ultima_execucao": agora_iso,
+        "falhas_consecutivas_totais": falhas_consecutivas_totais,
         "canais": status_canais
     }
     with open(STATUS_FILE, "w", encoding="utf-8") as f:
@@ -117,8 +137,7 @@ def executar_monitor() -> None:
     resolve_channel_ids(CANAIS_FILE)
 
     if not os.path.exists(CANAIS_FILE):
-        print(f"[monitor] {CANAIS_FILE} não existe.")
-        return
+        raise FileNotFoundError(f"{CANAIS_FILE} não existe.")
 
     with open(CANAIS_FILE, "r", encoding="utf-8-sig") as f:
         canais = json.load(f)
@@ -218,8 +237,16 @@ def executar_monitor() -> None:
                 "ultimo_sucesso": ultimos_sucessos_anteriores.get(nome_canal)
             })
 
+    # Contador de execuções seguidas em que TODOS os canais falharam
+    falhas_totais = carregar_falhas_consecutivas_anteriores()
+    if status_canais and all(not c["ok"] for c in status_canais):
+        falhas_totais += 1
+        print(f"[monitor] AVISO: todos os canais falharam (falhas consecutivas totais: {falhas_totais}).")
+    elif any(c["ok"] for c in status_canais):
+        falhas_totais = 0
+
     # Grava status da execução
-    salvar_status(agora_iso, status_canais)
+    salvar_status(agora_iso, status_canais, falhas_totais)
 
     # Se houver vídeos novos, salva
     if novos_videos:
@@ -233,11 +260,8 @@ def executar_monitor() -> None:
         enviar_notificacao_telegram(len(novos_videos))
     else:
         print("[monitor] Nenhum vídeo novo encontrado nesta execução.")
-
-    # Se TODOS os canais falharam, sai com erro para sinalizar no GitHub Actions
-    if status_canais and all(not c["ok"] for c in status_canais):
-        print("[monitor] ERRO CRÍTICO: Todos os canais falharam!")
-        sys.exit(1)
+    # Falha total de canais NÃO derruba o script: o workflow decide pelo
+    # falhas_consecutivas_totais do status.json (ver watch.yml).
 
 
 if __name__ == "__main__":

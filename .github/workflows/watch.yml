@@ -54,3 +54,18 @@ jobs:
             git commit -m "chore: atualizar vídeos, status e página [skip ci]"
             git push
           fi
+
+      # Fica vermelho (e-mail do GitHub) só quando TODOS os canais falharam
+      # em 3+ execuções seguidas. Roda depois do commit para a página/status
+      # serem sempre publicados.
+      - name: Fail if all channels keep failing
+        run: |
+          python - <<'EOF'
+          import json, sys
+          with open("data/status.json", encoding="utf-8-sig") as f:
+              n = json.load(f).get("falhas_consecutivas_totais", 0)
+          print(f"falhas_consecutivas_totais = {n}")
+          if n >= 3:
+              print("ERRO: todos os canais falharam em 3+ execuções seguidas.")
+              sys.exit(1)
+          EOF

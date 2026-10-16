@@ -81,12 +81,24 @@ def carregar_status() -> tuple[str, str]:
 
         alertas_html.append(f"<li>🔴 <strong>Falha no canal '{nome}':</strong> {erro} (Último sucesso: {u_suc_str})</li>")
 
+    falhas_totais = status_data.get("falhas_consecutivas_totais", 0)
+    if not isinstance(falhas_totais, int):
+        falhas_totais = 0
+
+    classe_banner = "status-alert-banner"
+    titulo_banner = "⚠️ Alerta de Monitoramento"
+    if falhas_totais >= 2:
+        classe_banner += " severe"
+        titulo_banner = f"🚨 Alerta: todos os canais falharam em {falhas_totais} verificações seguidas"
+    elif falhas_totais == 1:
+        titulo_banner = "ℹ️ Nenhum canal respondeu hoje — pode ser instabilidade temporária do YouTube"
+
     banner_html = ""
     if alertas_html:
         items_alertas = "\n".join(alertas_html)
         banner_html = f"""
-        <div class="status-alert-banner">
-            <div class="status-alert-header">⚠️ Alerta de Monitoramento</div>
+        <div class="{classe_banner}">
+            <div class="status-alert-header">{titulo_banner}</div>
             <ul class="status-alert-list">
                 {items_alertas}
             </ul>
@@ -323,6 +335,22 @@ def gerar_html(videos: list) -> str:
                 color: #ffda6a;
                 border: 1px solid #664d03;
                 border-left: 5px solid #ffc107;
+            }}
+        }}
+
+        .status-alert-banner.severe {{
+            background-color: #f8d7da;
+            color: #58151c;
+            border: 1px solid #f1aeb5;
+            border-left: 5px solid #dc3545;
+        }}
+
+        @media (prefers-color-scheme: dark) {{
+            .status-alert-banner.severe {{
+                background-color: #2c0b0e;
+                color: #ea868f;
+                border: 1px solid #842029;
+                border-left: 5px solid #dc3545;
             }}
         }}
 
