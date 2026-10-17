@@ -1,6 +1,6 @@
 {
-  "ultima_execucao": "2026-10-16T03:32:58.609458-03:00",
-  "falhas_consecutivas_totais": 1,
+  "ultima_execucao": "2026-10-16T22:15:38.257039-03:00",
+  "falhas_consecutivas_totais": 0,
   "canais": [
     {
       "nome": "Renato P",
@@ -11,14 +11,14 @@
     {
       "nome": "Perfumorista",
       "ok": false,
-      "erro": "HTTP Status 404",
+      "erro": "HTTP Status 500",
       "ultimo_sucesso": "2026-10-09T23:16:16.210617-03:00"
     },
     {
       "nome": "Sate Fragrances",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-10-09T23:16:16.210617-03:00"
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-10-16T22:15:38.257039-03:00"
     },
     {
       "nome": "O Perfumo Latra",
@@ -35,7 +35,7 @@
     {
       "nome": "Gents Scents",
       "ok": false,
-      "erro": "HTTP Status 404",
+      "erro": "HTTP Status 500",
       "ultimo_sucesso": "2026-10-13T00:30:16.072069-03:00"
     }
   ]
