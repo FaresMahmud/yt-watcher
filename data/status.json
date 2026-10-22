@@ -1,6 +1,6 @@
 {
-  "ultima_execucao": "2026-10-20T22:29:43.983530-03:00",
-  "falhas_consecutivas_totais": 2,
+  "ultima_execucao": "2026-10-21T22:26:49.591100-03:00",
+  "falhas_consecutivas_totais": 0,
   "canais": [
     {
       "nome": "Renato P",
@@ -17,7 +17,7 @@
     {
       "nome": "Sate Fragrances",
       "ok": false,
-      "erro": "HTTP Status 500",
+      "erro": "HTTP Status 404",
       "ultimo_sucesso": "2026-10-16T22:15:38.257039-03:00"
     },
     {
@@ -28,9 +28,9 @@
     },
     {
       "nome": "The Perfume Guy",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-10-09T23:16:16.210617-03:00"
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-10-21T22:26:49.591100-03:00"
     },
     {
       "nome": "Gents Scents",
