@@ -1,18 +1,18 @@
 {
-  "ultima_execucao": "2026-10-23T22:31:14.955156-03:00",
-  "falhas_consecutivas_totais": 2,
+  "ultima_execucao": "2026-10-24T22:03:36.439515-03:00",
+  "falhas_consecutivas_totais": 0,
   "canais": [
     {
       "nome": "Renato P",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-10-09T23:16:16.210617-03:00"
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-10-24T22:03:36.439515-03:00"
     },
     {
       "nome": "Perfumorista",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-10-18T22:08:28.027918-03:00"
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-10-24T22:03:36.439515-03:00"
     },
     {
       "nome": "Sate Fragrances",
@@ -29,7 +29,7 @@
     {
       "nome": "The Perfume Guy",
       "ok": false,
-      "erro": "HTTP Status 500",
+      "erro": "HTTP Status 404",
       "ultimo_sucesso": "2026-10-21T22:26:49.591100-03:00"
     },
     {
