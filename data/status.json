@@ -1,41 +1,41 @@
 {
-  "ultima_execucao": "2026-10-29T23:33:05.128247-03:00",
-  "falhas_consecutivas_totais": 4,
+  "ultima_execucao": "2026-10-30T23:16:15.964868-03:00",
+  "falhas_consecutivas_totais": 0,
   "canais": [
     {
       "nome": "Renato P",
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-10-30T23:16:15.964868-03:00"
+    },
+    {
+      "nome": "Perfumorista",
       "ok": false,
       "erro": "HTTP Status 404",
       "ultimo_sucesso": "2026-10-25T22:06:18.952238-03:00"
     },
     {
-      "nome": "Perfumorista",
+      "nome": "Sate Fragrances",
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-10-30T23:16:15.964868-03:00"
+    },
+    {
+      "nome": "O Perfumo Latra",
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-10-30T23:16:15.964868-03:00"
+    },
+    {
+      "nome": "The Perfume Guy",
       "ok": false,
       "erro": "HTTP Status 500",
       "ultimo_sucesso": "2026-10-25T22:06:18.952238-03:00"
     },
     {
-      "nome": "Sate Fragrances",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-10-25T22:06:18.952238-03:00"
-    },
-    {
-      "nome": "O Perfumo Latra",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-10-25T22:06:18.952238-03:00"
-    },
-    {
-      "nome": "The Perfume Guy",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-10-25T22:06:18.952238-03:00"
-    },
-    {
       "nome": "Gents Scents",
       "ok": false,
-      "erro": "HTTP Status 404",
+      "erro": "HTTP Status 500",
       "ultimo_sucesso": "2026-10-25T22:06:18.952238-03:00"
     }
   ]
