@@ -1,6 +1,6 @@
 {
-  "ultima_execucao": "2026-11-06T00:22:30.977785-03:00",
-  "falhas_consecutivas_totais": 2,
+  "ultima_execucao": "2026-11-06T23:43:44.473657-03:00",
+  "falhas_consecutivas_totais": 0,
   "canais": [
     {
       "nome": "Renato P",
@@ -22,9 +22,9 @@
     },
     {
       "nome": "O Perfumo Latra",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-10-30T23:16:15.964868-03:00"
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-11-06T23:43:44.473657-03:00"
     },
     {
       "nome": "The Perfume Guy",
