@@ -1,5 +1,5 @@
 {
-  "ultima_execucao": "2026-11-06T23:43:44.473657-03:00",
+  "ultima_execucao": "2026-11-07T23:21:50.583583-03:00",
   "falhas_consecutivas_totais": 0,
   "canais": [
     {
@@ -11,7 +11,7 @@
     {
       "nome": "Perfumorista",
       "ok": false,
-      "erro": "HTTP Status 404",
+      "erro": "HTTP Status 500",
       "ultimo_sucesso": "2026-11-03T23:58:58.456637-03:00"
     },
     {
@@ -22,21 +22,21 @@
     },
     {
       "nome": "O Perfumo Latra",
-      "ok": true,
-      "erro": null,
+      "ok": false,
+      "erro": "HTTP Status 404",
       "ultimo_sucesso": "2026-11-06T23:43:44.473657-03:00"
     },
     {
       "nome": "The Perfume Guy",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-10-25T22:06:18.952238-03:00"
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-11-07T23:21:50.583583-03:00"
     },
     {
       "nome": "Gents Scents",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-10-25T22:06:18.952238-03:00"
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-11-07T23:21:50.583583-03:00"
     }
   ]
 }
