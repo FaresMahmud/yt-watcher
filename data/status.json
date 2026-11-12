@@ -1,11 +1,11 @@
 {
-  "ultima_execucao": "2026-11-10T23:43:53.898752-03:00",
-  "falhas_consecutivas_totais": 1,
+  "ultima_execucao": "2026-11-12T00:45:53.189167-03:00",
+  "falhas_consecutivas_totais": 0,
   "canais": [
     {
       "nome": "Renato P",
       "ok": false,
-      "erro": "HTTP Status 404",
+      "erro": "HTTP Status 500",
       "ultimo_sucesso": "2026-11-10T01:35:22.293177-03:00"
     },
     {
@@ -29,14 +29,14 @@
     {
       "nome": "The Perfume Guy",
       "ok": false,
-      "erro": "HTTP Status 500",
+      "erro": "HTTP Status 404",
       "ultimo_sucesso": "2026-11-10T01:35:22.293177-03:00"
     },
     {
       "nome": "Gents Scents",
-      "ok": false,
-      "erro": "HTTP Status 404",
-      "ultimo_sucesso": "2026-11-10T01:35:22.293177-03:00"
+      "ok": true,
+      "erro": null,
+      "ultimo_sucesso": "2026-11-12T00:45:53.189167-03:00"
     }
   ]
 }
