@@ -1,6 +1,6 @@
 {
-  "ultima_execucao": "2026-11-14T23:34:27.223402-03:00",
-  "falhas_consecutivas_totais": 3,
+  "ultima_execucao": "2026-11-15T23:41:11.204743-03:00",
+  "falhas_consecutivas_totais": 4,
   "canais": [
     {
       "nome": "Renato P",
@@ -11,7 +11,7 @@
     {
       "nome": "Perfumorista",
       "ok": false,
-      "erro": "HTTP Status 404",
+      "erro": "HTTP Status 500",
       "ultimo_sucesso": "2026-11-10T01:35:22.293177-03:00"
     },
     {
@@ -35,7 +35,7 @@
     {
       "nome": "Gents Scents",
       "ok": false,
-      "erro": "HTTP Status 404",
+      "erro": "HTTP Status 500",
       "ultimo_sucesso": "2026-11-12T00:45:53.189167-03:00"
     }
   ]
